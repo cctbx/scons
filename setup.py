@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -32,13 +32,15 @@ NOTE: Installed SCons is not importable like usual Python packages. It is
       below is dedicated to make it happen on various platforms.
 """
 
-__revision__ = "src/setup.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+from __future__ import print_function
+
+__revision__ = "src/setup.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os
 import stat
 import sys
 
-Version = "2.2.0"
+Version = "3.0.0"
 
 man_pages = [
     'scons.1',
@@ -52,7 +54,6 @@ if head:
     os.chdir(head)
     sys.argv[0] = tail
 
-
 # flag if setup.py is run on win32 or _for_ win32 platform,
 # (when building windows installer on linux, for example)
 is_win32 = 0
@@ -65,7 +66,6 @@ if not sys.platform == 'win32':
 else:
     is_win32 = 1
 
-
 import distutils
 import distutils.core
 import distutils.command.install
@@ -73,6 +73,18 @@ import distutils.command.install_data
 import distutils.command.install_lib
 import distutils.command.install_scripts
 import distutils.command.build_scripts
+import distutils.msvccompiler
+
+
+def get_build_version():
+    """ monkey patch distutils msvc version if we're not on windows.
+    We need to use vc version 9 for python 2.7.x and it defaults to 6
+    for non-windows platforms and there is no way to override it besides
+    monkey patching"""
+    return 9
+
+
+distutils.msvccompiler.get_build_version = get_build_version
 
 _install = distutils.command.install.install
 _install_data = distutils.command.install_data.install_data
@@ -80,12 +92,15 @@ _install_lib = distutils.command.install_lib.install_lib
 _install_scripts = distutils.command.install_scripts.install_scripts
 _build_scripts = distutils.command.build_scripts.build_scripts
 
+
 class _options(object):
     pass
+
 
 Options = _options()
 
 Installed = []
+
 
 def set_explicitly(name, args):
     """
@@ -107,51 +122,52 @@ def set_explicitly(name, args):
             break
     return set
 
+
 class install(_install):
     user_options = _install.user_options + [
-                    ('no-scons-script', None,
-                     "don't install 'scons', only install 'scons-%s'" % Version),
-                    ('no-version-script', None,
-                     "don't install 'scons-%s', only install 'scons'" % Version),
-                    ('install-bat', None,
-                     "install 'scons.bat' script"),
-                    ('no-install-bat', None,
-                     "do not install 'scons.bat' script"),
-                    ('install-man', None,
-                     "install SCons man pages"),
-                    ('no-install-man', None,
-                     "do not install SCons man pages"),
-                    ('standard-lib', None,
-                     "install SCons library in standard Python location"),
-                    ('standalone-lib', None,
-                     "install SCons library in separate standalone directory"),
-                    ('version-lib', None,
-                     "install SCons library in version-numbered directory"),
-                   ]
+        ('no-scons-script', None,
+         "don't install 'scons', only install 'scons-%s'" % Version),
+        ('no-version-script', None,
+         "don't install 'scons-%s', only install 'scons'" % Version),
+        ('install-bat', None,
+         "install 'scons.bat' script"),
+        ('no-install-bat', None,
+         "do not install 'scons.bat' script"),
+        ('install-man', None,
+         "install SCons man pages"),
+        ('no-install-man', None,
+         "do not install SCons man pages"),
+        ('standard-lib', None,
+         "install SCons library in standard Python location"),
+        ('standalone-lib', None,
+         "install SCons library in separate standalone directory"),
+        ('version-lib', None,
+         "install SCons library in version-numbered directory"),
+    ]
     boolean_options = _install.boolean_options + [
-                       'no-scons-script',
-                       'no-version-script',
-                       'install-bat',
-                       'no-install-bat',
-                       'install-man',
-                       'no-install-man',
-                       'standard-lib',
-                       'standalone-lib',
-                       'version-lib'
-                      ]
+        'no-scons-script',
+        'no-version-script',
+        'install-bat',
+        'no-install-bat',
+        'install-man',
+        'no-install-man',
+        'standard-lib',
+        'standalone-lib',
+        'version-lib'
+    ]
 
     if hasattr(os, 'link'):
         user_options.append(
-                    ('hardlink-scons', None,
-                     "hard link 'scons' to the version-numbered script, don't make a separate 'scons' copy"),
-                     )
+            ('hardlink-scons', None,
+             "hard link 'scons' to the version-numbered script, don't make a separate 'scons' copy"),
+        )
         boolean_options.append('hardlink-script')
 
     if hasattr(os, 'symlink'):
         user_options.append(
-                    ('symlink-scons', None,
-                     "make 'scons' a symbolic link to the version-numbered script, don't make a separate 'scons' copy"),
-                     )
+            ('symlink-scons', None,
+             "make 'scons' a symbolic link to the version-numbered script, don't make a separate 'scons' copy"),
+        )
         boolean_options.append('symlink-script')
 
     def initialize_options(self):
@@ -189,6 +205,7 @@ class install(_install):
         Options.hardlink_scons = self.hardlink_scons
         Options.symlink_scons = self.symlink_scons
 
+
 def get_scons_prefix(libdir, is_win32):
     """
     Return the right prefix for SCons library installation.  Find
@@ -213,6 +230,7 @@ def get_scons_prefix(libdir, is_win32):
                 return os.path.join(drive + head)
     return libdir
 
+
 def force_to_usr_local(self):
     """
     A hack to decide if we need to "force" the installation directories
@@ -223,6 +241,7 @@ def force_to_usr_local(self):
     return (sys.platform[:6] == 'darwin' and
             (self.install_dir[:9] == '/Library/' or
              self.install_dir[:16] == '/System/Library/'))
+
 
 class install_lib(_install_lib):
     def finalize_options(self):
@@ -246,6 +265,7 @@ class install_lib(_install_lib):
         msg = "Installed SCons library modules into %s" % self.install_dir
         Installed.append(msg)
 
+
 class install_scripts(_install_scripts):
     def finalize_options(self):
         _install_scripts.finalize_options(self)
@@ -259,18 +279,24 @@ class install_scripts(_install_scripts):
         pass
 
     def hardlink_scons(self, src, dst, ver):
-        try: os.unlink(dst)
-        except OSError: pass
+        try:
+            os.unlink(dst)
+        except OSError:
+            pass
         os.link(ver, dst)
 
     def symlink_scons(self, src, dst, ver):
-        try: os.unlink(dst)
-        except OSError: pass
+        try:
+            os.unlink(dst)
+        except OSError:
+            pass
         os.symlink(os.path.split(ver)[1], dst)
 
     def copy_scons(self, src, dst, *args):
-        try: os.unlink(dst)
-        except OSError: pass
+        try:
+            os.unlink(dst)
+        except OSError:
+            pass
         self.copy_file(src, dst)
         self.outfiles.append(dst)
 
@@ -325,7 +351,7 @@ class install_scripts(_install_scripts):
                 self.copy_scons(src, scons_version_bat)
 
         # --- distutils copy/paste ---
-        if os.name == 'posix':
+        if hasattr(os, 'chmod') and hasattr(os, 'stat'):
             # Set the executable bits (owner, group, and world) on
             # all the scripts we just installed.
             for file in self.get_outputs():
@@ -333,19 +359,25 @@ class install_scripts(_install_scripts):
                     # log.info("changing mode of %s", file)
                     pass
                 else:
-                    mode = ((os.stat(file)[stat.ST_MODE]) | 0555) & 07777
+                    # Use symbolic versions of permissions so this script doesn't fail to parse under python3.x
+                    exec_and_read_permission = stat.S_IXOTH | stat.S_IXUSR | stat.S_IXGRP | stat.S_IROTH | stat.S_IRUSR | stat.S_IRGRP
+                    mode_mask = 4095  # Octal 07777 used because python3 has different octal syntax than python 2
+                    mode = ((os.stat(file)[stat.ST_MODE]) | exec_and_read_permission) & mode_mask
                     # log.info("changing mode of %s to %o", file, mode)
                     os.chmod(file, mode)
-        # --- /distutils copy/paste ---
+                    # --- /distutils copy/paste ---
+
 
 class build_scripts(_build_scripts):
     def finalize_options(self):
         _build_scripts.finalize_options(self)
         self.build_dir = os.path.join('build', 'scripts')
 
+
 class install_data(_install_data):
     def initialize_options(self):
         _install_data.initialize_options(self)
+
     def finalize_options(self):
         _install_data.finalize_options(self)
         if force_to_usr_local(self):
@@ -362,6 +394,7 @@ class install_data(_install_data):
         else:
             self.data_files = []
 
+
 description = "Open Source next-generation build tool."
 
 long_description = """Open Source next-generation build tool.
@@ -373,6 +406,7 @@ scripts = [
     'script/scons',
     'script/sconsign',
     'script/scons-time',
+    'script/scons-configure-cache',
 
     # We include scons.bat in the list of scripts, even on UNIX systems,
     # because we provide an option to allow it be installed explicitly,
@@ -382,39 +416,110 @@ scripts = [
 ]
 
 arguments = {
-    'name'             : "scons",
-    'version'          : Version,
-    'description'      : description,
-    'long_description' : long_description,
-    'author'           : 'Steven Knight',
-    'author_email'     : 'knight@baldmt.com',
-    'url'              : "http://www.scons.org/",
-    'packages'         : ["SCons",
-                          "SCons.compat",
-                          "SCons.Node",
-                          "SCons.Options",
-                          "SCons.Platform",
-                          "SCons.Scanner",
-                          "SCons.Script",
-                          "SCons.Tool",
-                          "SCons.Tool.MSCommon",
-                          "SCons.Tool.packaging",
-                          "SCons.Variables",
-                         ],
-    'package_dir'      : {'' : 'engine'},
-    'data_files'       : [('man/man1', man_pages)],
-    'scripts'          : scripts,
-    'cmdclass'         : {'install'         : install,
-                          'install_lib'     : install_lib,
-                          'install_data'    : install_data,
-                          'install_scripts' : install_scripts,
-                          'build_scripts'   : build_scripts}
+    'name': "scons",
+    'version': Version,
+    'description': description,
+    'long_description': long_description,
+    'author': 'Steven Knight',
+    'author_email': 'knight@baldmt.com',
+    'url': "http://www.scons.org/",
+    'packages': ["SCons",
+                 "SCons.compat",
+                 "SCons.Node",
+                 "SCons.Options",
+                 "SCons.Platform",
+                 "SCons.Scanner",
+                 "SCons.Script",
+                 "SCons.Tool",
+                 "SCons.Tool.docbook",
+                 "SCons.Tool.MSCommon",
+                 "SCons.Tool.packaging",
+                 "SCons.Variables",
+                 ],
+    'package_dir': {'': 'engine',
+                    'SCons.Tool.docbook': 'engine/SCons/Tool/docbook'},
+    'package_data': {'SCons.Tool.docbook': ['docbook-xsl-1.76.1/*',
+                                            'docbook-xsl-1.76.1/common/*',
+                                            'docbook-xsl-1.76.1/docsrc/*',
+                                            'docbook-xsl-1.76.1/eclipse/*',
+                                            'docbook-xsl-1.76.1/epub/*',
+                                            'docbook-xsl-1.76.1/epub/bin/*',
+                                            'docbook-xsl-1.76.1/epub/bin/lib/*',
+                                            'docbook-xsl-1.76.1/epub/bin/xslt/*',
+                                            'docbook-xsl-1.76.1/extensions/*',
+                                            'docbook-xsl-1.76.1/fo/*',
+                                            'docbook-xsl-1.76.1/highlighting/*',
+                                            'docbook-xsl-1.76.1/html/*',
+                                            'docbook-xsl-1.76.1/htmlhelp/*',
+                                            'docbook-xsl-1.76.1/images/*',
+                                            'docbook-xsl-1.76.1/images/callouts/*',
+                                            'docbook-xsl-1.76.1/images/colorsvg/*',
+                                            'docbook-xsl-1.76.1/javahelp/*',
+                                            'docbook-xsl-1.76.1/lib/*',
+                                            'docbook-xsl-1.76.1/manpages/*',
+                                            'docbook-xsl-1.76.1/params/*',
+                                            'docbook-xsl-1.76.1/profiling/*',
+                                            'docbook-xsl-1.76.1/roundtrip/*',
+                                            'docbook-xsl-1.76.1/slides/browser/*',
+                                            'docbook-xsl-1.76.1/slides/fo/*',
+                                            'docbook-xsl-1.76.1/slides/graphics/*',
+                                            'docbook-xsl-1.76.1/slides/graphics/active/*',
+                                            'docbook-xsl-1.76.1/slides/graphics/inactive/*',
+                                            'docbook-xsl-1.76.1/slides/graphics/toc/*',
+                                            'docbook-xsl-1.76.1/slides/html/*',
+                                            'docbook-xsl-1.76.1/slides/htmlhelp/*',
+                                            'docbook-xsl-1.76.1/slides/keynote/*',
+                                            'docbook-xsl-1.76.1/slides/keynote/xsltsl/*',
+                                            'docbook-xsl-1.76.1/slides/svg/*',
+                                            'docbook-xsl-1.76.1/slides/xhtml/*',
+                                            'docbook-xsl-1.76.1/template/*',
+                                            'docbook-xsl-1.76.1/tests/*',
+                                            'docbook-xsl-1.76.1/tools/bin/*',
+                                            'docbook-xsl-1.76.1/tools/make/*',
+                                            'docbook-xsl-1.76.1/webhelp/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/css/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/images/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/jquery/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/jquery/theme-redmond/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/jquery/theme-redmond/images/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/jquery/treeview/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/common/jquery/treeview/images/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/content/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/content/search/*',
+                                            'docbook-xsl-1.76.1/webhelp/docs/content/search/stemmers/*',
+                                            'docbook-xsl-1.76.1/webhelp/docsrc/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/css/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/images/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/jquery/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/jquery/theme-redmond/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/jquery/theme-redmond/images/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/jquery/treeview/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/common/jquery/treeview/images/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/content/search/*',
+                                            'docbook-xsl-1.76.1/webhelp/template/content/search/stemmers/*',
+                                            'docbook-xsl-1.76.1/webhelp/xsl/*',
+                                            'docbook-xsl-1.76.1/website/*',
+                                            'docbook-xsl-1.76.1/xhtml/*',
+                                            'docbook-xsl-1.76.1/xhtml-1_1/*',
+                                            'utils/*']},
+    'data_files': [('man/man1', man_pages)],
+    'scripts': scripts,
+    'cmdclass': {'install': install,
+                 'install_lib': install_lib,
+                 'install_data': install_data,
+                 'install_scripts': install_scripts,
+                 'build_scripts': build_scripts}
 }
 
 distutils.core.setup(**arguments)
 
 if Installed:
-    print '\n'.join(Installed)
+    for i in Installed:
+        print(i)
 
 # Local Variables:
 # tab-width:4

@@ -1,5 +1,11 @@
+"""SCons.Scanner.SWIG
+
+This module implements the dependency scanner for SWIG code. 
+
+"""
+
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,22 +27,16 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__doc__ = """
-collections compatibility module for older (pre-2.4) Python versions
+__revision__ = "src/engine/SCons/Scanner/SWIG.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
-This does not not NOT (repeat, *NOT*) provide complete collections
-functionality.  It only wraps the portions of collections functionality
-used by SCons, in an interface that looks enough like collections for
-our purposes.
-"""
+import SCons.Scanner
 
-__revision__ = "src/engine/SCons/compat/_scons_collections.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+SWIGSuffixes = [ '.i' ]
 
-# Use exec to hide old names from fixers.
-exec("""if True:
-            from UserDict import UserDict
-            from UserList import UserList
-            from UserString import UserString""")
+def SWIGScanner():
+    expr = '^[ \t]*%[ \t]*(?:include|import|extern)[ \t]*(<|"?)([^>\s"]+)(?:>|"?)'
+    scanner = SCons.Scanner.ClassicCPP("SWIGScanner", ".i", "SWIGPATH", expr)
+    return scanner
 
 # Local Variables:
 # tab-width:4

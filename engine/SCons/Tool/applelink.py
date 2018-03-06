@@ -9,7 +9,7 @@ selection method.
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -31,13 +31,13 @@ selection method.
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Tool/applelink.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/applelink.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import SCons.Util
 
 # Even though the Mac is based on the GNU toolchain, it doesn't understand
 # the -rpath option, so we use the "link" tool instead of "gnulink".
-import link
+from . import link
 
 def generate(env):
     """Add Builders and construction variables for applelink to an
@@ -50,6 +50,14 @@ def generate(env):
     env['LINKCOM'] = env['LINKCOM'] + ' $_FRAMEWORKPATH $_FRAMEWORKS $FRAMEWORKSFLAGS'
     env['SHLINKFLAGS'] = SCons.Util.CLVar('$LINKFLAGS -dynamiclib')
     env['SHLINKCOM'] = env['SHLINKCOM'] + ' $_FRAMEWORKPATH $_FRAMEWORKS $FRAMEWORKSFLAGS'
+
+
+    # TODO: Work needed to generate versioned shared libraries
+    # Leaving this commented out, and also going to disable versioned library checking for now
+    # see: http://docstore.mik.ua/orelly/unix3/mac/ch05_04.htm  for proper naming
+    #link._setup_versioned_lib_variables(env, tool = 'applelink')#, use_soname = use_soname)
+    #env['LINKCALLBACKS'] = link._versioned_lib_callbacks()
+
 
     # override the default for loadable modules, which are different
     # on OS X than dynamic shared libs.  echoing what XCode does for

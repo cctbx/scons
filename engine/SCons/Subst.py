@@ -5,7 +5,7 @@ SCons string substitution.
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -26,7 +26,7 @@ SCons string substitution.
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__revision__ = "src/engine/SCons/Subst.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Subst.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import collections
 import re
@@ -77,6 +77,14 @@ class Literal(object):
 
     def is_literal(self):
         return 1
+
+    def __eq__(self, other):
+        if not isinstance(other, Literal):
+            return False
+        return self.lstr == other.lstr
+
+    def __neq__(self, other):
+        return not self.__eq__(other)
 
 class SpecialAttrWrapper(object):
     """This is a wrapper for what we call a 'Node special attribute.'
@@ -172,7 +180,7 @@ class NLWrapper(object):
     In practice, this might be a wash performance-wise, but it's a little
     cleaner conceptually...
     """
-    
+
     def __init__(self, list, func):
         self.list = list
         self.func = func
@@ -190,7 +198,7 @@ class NLWrapper(object):
         self._create_nodelist = self._return_nodelist
         return self.nodelist
     _create_nodelist = _gen_nodelist
-    
+
 
 class Targets_or_Sources(collections.UserList):
     """A class that implements $TARGETS or $SOURCES expansions by in turn
@@ -330,25 +338,28 @@ SUBST_RAW = 1
 SUBST_SIG = 2
 
 _rm = re.compile(r'\$[()]')
-_remove = re.compile(r'\$\([^\$]*(\$[^\)][^\$]*)*\$\)')
+_rm_split = re.compile(r'(\$[()])')
 
 # Indexed by the SUBST_* constants above.
-_regex_remove = [ _rm, None, _remove ]
+_regex_remove = [ _rm, None, _rm_split ]
 
 def _rm_list(list):
-    #return [ l for l in list if not l in ('$(', '$)') ]
     return [l for l in list if not l in ('$(', '$)')]
 
 def _remove_list(list):
     result = []
-    do_append = result.append
+    depth = 0
     for l in list:
         if l == '$(':
-            do_append = lambda x: None
+            depth += 1
         elif l == '$)':
-            do_append = result.append
-        else:
-            do_append(l)
+            depth -= 1
+            if depth < 0:
+                break
+        elif depth == 0:
+            result.append(l)
+    if depth != 0:
+        return None
     return result
 
 # Indexed by the SUBST_* constants above.
@@ -431,14 +442,14 @@ def scons_subst(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={
                     return s
                 else:
                     key = s[1:]
-                    if key[0] == '{' or key.find('.') >= 0:
+                    if key[0] == '{' or '.' in key:
                         if key[0] == '{':
                             key = key[1:-1]
                         try:
                             s = eval(key, self.gvars, lvars)
                         except KeyboardInterrupt:
                             raise
-                        except Exception, e:
+                        except Exception as e:
                             if e.__class__ in AllowableExceptions:
                                 return ''
                             raise_exception(e, lvars['TARGETS'], s)
@@ -451,7 +462,7 @@ def scons_subst(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={
                             raise_exception(NameError(key), lvars['TARGETS'], s)
                         else:
                             return ''
-    
+
                     # Before re-expanding the result, handle
                     # recursive expansion by copying the local
                     # variable dictionary and overwriting a null
@@ -555,12 +566,19 @@ def scons_subst(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={
     except KeyError:
         pass
 
+    res = result
     if is_String(result):
         # Remove $(-$) pairs and any stuff in between,
         # if that's appropriate.
         remove = _regex_remove[mode]
         if remove:
-            result = remove.sub('', result)
+            if mode == SUBST_SIG:
+                result = _list_remove[mode](remove.split(result))
+                if result is None:
+                    raise SCons.Errors.UserError("Unbalanced $(/$) in: " + res)
+                result = ' '.join(result)
+            else:
+                result = remove.sub('', result)
         if mode != SUBST_RAW:
             # Compress strings of white space characters into
             # a single space.
@@ -569,10 +587,10 @@ def scons_subst(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={
         remove = _list_remove[mode]
         if remove:
             result = remove(result)
+            if result is None:
+                raise SCons.Errors.UserError("Unbalanced $(/$) in: " + str(res))
 
     return result
-
-#Subst_List_Strings = {}
 
 def scons_subst_list(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={}, lvars={}, conv=None):
     """Substitute construction variables in a string (or list or other
@@ -582,12 +600,6 @@ def scons_subst_list(strSubst, env, mode=SUBST_RAW, target=None, source=None, gv
     substitutions within strings, so see that function instead
     if that's what you're looking for.
     """
-#    try:
-#        Subst_List_Strings[strSubst] = Subst_List_Strings[strSubst] + 1
-#    except KeyError:
-#        Subst_List_Strings[strSubst] = 1
-#    import SCons.Debug
-#    SCons.Debug.caller_trace(1)
     class ListSubber(collections.UserList):
         """A class to construct the results of a scons_subst_list() call.
 
@@ -653,7 +665,7 @@ def scons_subst_list(strSubst, env, mode=SUBST_RAW, target=None, source=None, gv
                             s = eval(key, self.gvars, lvars)
                         except KeyboardInterrupt:
                             raise
-                        except Exception, e:
+                        except Exception as e:
                             if e.__class__ in AllowableExceptions:
                                 return
                             raise_exception(e, lvars['TARGETS'], s)

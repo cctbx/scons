@@ -9,7 +9,7 @@ selection method.
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -31,7 +31,7 @@ selection method.
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Tool/mingw.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/mingw.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os
 import os.path
@@ -86,7 +86,8 @@ def shlib_emitter(target, source, env):
     no_import_lib = env.get('no_import_lib', 0)
 
     if not dll:
-        raise SCons.Errors.UserError("A shared library should have exactly one target with the suffix: %s" % env.subst("$SHLIBSUFFIX"))
+        raise SCons.Errors.UserError("A shared library should have exactly one target with the suffix: %s Target(s) are:%s" %  \
+            (env.subst("$SHLIBSUFFIX"), ",".join([str(t) for t in target])))
     
     if not no_import_lib and \
        not env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX'):
@@ -133,7 +134,7 @@ def generate(env):
         
 
     # Most of mingw is the same as gcc and friends...
-    gnu_tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas', 'm4']
+    gnu_tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas', 'gfortran', 'm4']
     for tool in gnu_tools:
         SCons.Tool.Tool(tool)(env)
 
@@ -146,6 +147,7 @@ def generate(env):
     env['SHLINKCOM']   = shlib_action
     env['LDMODULECOM'] = shlib_action
     env.Append(SHLIBEMITTER = [shlib_emitter])
+    env.Append(LDMODULEEMITTER = [shlib_emitter])
     env['AS'] = 'as'
 
     env['WIN32DEFPREFIX']        = ''
@@ -168,6 +170,7 @@ def generate(env):
     env['OBJSUFFIX'] = '.o'
     env['LIBPREFIX'] = 'lib'
     env['LIBSUFFIX'] = '.a'
+    env['PROGSUFFIX'] = '.exe'
 
 def exists(env):
     return find(env)

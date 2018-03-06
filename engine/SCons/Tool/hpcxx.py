@@ -1,6 +1,6 @@
-"""SCons.Tool.SCCS.py
+"""SCons.Tool.hpc++
 
-Tool-specific initialization for SCCS.
+Tool-specific initialization for c++ on HP/UX.
 
 There normally shouldn't be any need to import this module directly.
 It will usually be imported through the generic SCons.Tool.Tool()
@@ -8,7 +8,8 @@ selection method.
 
 """
 
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+#
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -28,34 +29,56 @@ selection method.
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 
-__revision__ = "src/engine/SCons/Tool/SCCS.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/hpcxx.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
-import SCons.Action
-import SCons.Builder
+import os.path
+
 import SCons.Util
 
+import SCons.Tool.cxx
+cplusplus = SCons.Tool.cxx
+#cplusplus = __import__('cxx', globals(), locals(), [])
+
+
+acc = None
+
+# search for the acc compiler and linker front end
+
+try:
+    dirs = os.listdir('/opt')
+except (IOError, OSError):
+    # Not being able to read the directory because it doesn't exist
+    # (IOError) or isn't readable (OSError) is okay.
+    dirs = []
+
+for dir in dirs:
+    cc = '/opt/' + dir + '/bin/aCC'
+    if os.path.exists(cc):
+        acc = cc
+        break
+
+        
 def generate(env):
-    """Add a Builder factory function and construction variables for
-    SCCS to an Environment."""
+    """Add Builders and construction variables for g++ to an Environment."""
+    cplusplus.generate(env)
 
-    def SCCSFactory(env=env):
-        """ """
-        import SCons.Warnings as W
-        W.warn(W.DeprecatedSourceCodeWarning, """The SCCS() factory is deprecated and there is no replacement.""")
-        act = SCons.Action.Action('$SCCSCOM', '$SCCSCOMSTR')
-        return SCons.Builder.Builder(action = act, env = env)
+    if acc:
+        env['CXX']        = acc or 'aCC'
+        env['SHCXXFLAGS'] = SCons.Util.CLVar('$CXXFLAGS +Z')
+        # determine version of aCC
+        line = os.popen(acc + ' -V 2>&1').readline().rstrip()
+        if line.find('aCC: HP ANSI C++') == 0:
+            env['CXXVERSION'] = line.split()[-1]
 
-    #setattr(env, 'SCCS', SCCSFactory)
-    env.SCCS = SCCSFactory
-
-    env['SCCS']         = 'sccs'
-    env['SCCSFLAGS']    = SCons.Util.CLVar('')
-    env['SCCSGETFLAGS'] = SCons.Util.CLVar('')
-    env['SCCSCOM']      = '$SCCS $SCCSFLAGS get $SCCSGETFLAGS $TARGET'
+        if env['PLATFORM'] == 'cygwin':
+            env['SHCXXFLAGS'] = SCons.Util.CLVar('$CXXFLAGS')
+        else:
+            env['SHCXXFLAGS'] = SCons.Util.CLVar('$CXXFLAGS +Z')
 
 def exists(env):
-    return env.Detect('sccs')
+    return acc
 
 # Local Variables:
 # tab-width:4

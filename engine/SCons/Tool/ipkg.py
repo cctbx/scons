@@ -11,7 +11,7 @@ packages fake_root.
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -33,7 +33,7 @@ packages fake_root.
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Tool/ipkg.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/ipkg.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os
 
@@ -44,20 +44,26 @@ def generate(env):
     try:
         bld = env['BUILDERS']['Ipkg']
     except KeyError:
-        bld = SCons.Builder.Builder( action  = '$IPKGCOM',
-                                     suffix  = '$IPKGSUFFIX',
-                                     source_scanner = None,
-                                     target_scanner = None)
+        bld = SCons.Builder.Builder(action='$IPKGCOM',
+                                    suffix='$IPKGSUFFIX',
+                                    source_scanner=None,
+                                    target_scanner=None)
         env['BUILDERS']['Ipkg'] = bld
 
-    env['IPKG']       = 'ipkg-build'
-    env['IPKGCOM']    = '$IPKG $IPKGFLAGS ${SOURCE}'
-    env['IPKGUSER']   = os.popen('id -un').read().strip()
-    env['IPKGGROUP']  = os.popen('id -gn').read().strip()
-    env['IPKGFLAGS']  = SCons.Util.CLVar('-o $IPKGUSER -g $IPKGGROUP')
+
+    env['IPKG'] = 'ipkg-build'
+    env['IPKGCOM'] = '$IPKG $IPKGFLAGS ${SOURCE}'
+
+    if env.WhereIs('id'):
+        env['IPKGUSER'] = os.popen('id -un').read().strip()
+        env['IPKGGROUP'] = os.popen('id -gn').read().strip()
+    env['IPKGFLAGS'] = SCons.Util.CLVar('-o $IPKGUSER -g $IPKGGROUP')
     env['IPKGSUFFIX'] = '.ipk'
 
 def exists(env):
+    """
+    Can we find the tool
+    """
     return env.Detect('ipkg-build')
 
 # Local Variables:

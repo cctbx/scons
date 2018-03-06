@@ -9,7 +9,7 @@ selection method.
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -31,7 +31,7 @@ selection method.
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Tool/zip.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/zip.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os.path
 
@@ -40,31 +40,23 @@ import SCons.Defaults
 import SCons.Node.FS
 import SCons.Util
 
-try:
-    import zipfile
-    internal_zip = 1
-except ImportError:
-    internal_zip = 0
+import zipfile
 
-if internal_zip:
-    zipcompression = zipfile.ZIP_DEFLATED
-    def zip(target, source, env):
-        compression = env.get('ZIPCOMPRESSION', 0)
-        zf = zipfile.ZipFile(str(target[0]), 'w', compression)
-        for s in source:
-            if s.isdir():
-                for dirpath, dirnames, filenames in os.walk(str(s)):
-                    for fname in filenames:
-                        path = os.path.join(dirpath, fname)
-                        if os.path.isfile(path):
-                            zf.write(path)
-            else:
-                zf.write(str(s))
-        zf.close()
-else:
-    zipcompression = 0
-    zip = "$ZIP $ZIPFLAGS ${TARGET.abspath} $SOURCES"
+zipcompression = zipfile.ZIP_DEFLATED
+def zip(target, source, env):
+    compression = env.get('ZIPCOMPRESSION', 0)
+    zf = zipfile.ZipFile(str(target[0]), 'w', compression)
+    for s in source:
+        if s.isdir():
+            for dirpath, dirnames, filenames in os.walk(str(s)):
+                for fname in filenames:
+                    path = os.path.join(dirpath, fname)
+                    if os.path.isfile(path):
 
+                        zf.write(path, os.path.relpath(path, str(env.get('ZIPROOT', ''))))
+        else:
+            zf.write(str(s), os.path.relpath(str(s), str(env.get('ZIPROOT', ''))))
+    zf.close()
 
 zipAction = SCons.Action.Action(zip, varlist=['ZIPCOMPRESSION'])
 
@@ -88,9 +80,10 @@ def generate(env):
     env['ZIPCOM']     = zipAction
     env['ZIPCOMPRESSION'] =  zipcompression
     env['ZIPSUFFIX']  = '.zip'
+    env['ZIPROOT']    = SCons.Util.CLVar('')
 
 def exists(env):
-    return internal_zip or env.Detect('zip')
+    return True
 
 # Local Variables:
 # tab-width:4

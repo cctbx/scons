@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -20,14 +20,14 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__revision__ = "src/engine/SCons/Scanner/Dir.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Scanner/Dir.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import SCons.Node.FS
 import SCons.Scanner
 
 def only_dirs(nodes):
     is_Dir = lambda n: isinstance(n.disambiguate(), SCons.Node.FS.Dir)
-    return list(filter(is_Dir, nodes))
+    return [node for node in nodes if is_Dir(node)]
 
 def DirScanner(**kw):
     """Return a prototype Scanner instance for scanning
@@ -77,7 +77,7 @@ def scan_on_disk(node, env, path=()):
     that and then call the in-memory scanning function.
     """
     try:
-        flist = node.fs.listdir(node.abspath)
+        flist = node.fs.listdir(node.get_abspath())
     except (IOError, OSError):
         return []
     e = node.Entry

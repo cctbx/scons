@@ -8,7 +8,7 @@ Coded by Andy Friesen
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -30,9 +30,7 @@ Coded by Andy Friesen
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Scanner/D.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
-
-import re
+__revision__ = "src/engine/SCons/Scanner/D.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import SCons.Scanner
 
@@ -43,13 +41,13 @@ def DScanner():
 
 class D(SCons.Scanner.Classic):
     def __init__ (self):
-        SCons.Scanner.Classic.__init__ (self,
+        SCons.Scanner.Classic.__init__ (
+            self,
             name = "DScanner",
             suffixes = '$DSUFFIXES',
             path_variable = 'DPATH',
-            regex = 'import\s+(?:[a-zA-Z0-9_.]+)\s*(?:,\s*(?:[a-zA-Z0-9_.]+)\s*)*;')
-
-        self.cre2 = re.compile ('(?:import\s)?\s*([a-zA-Z0-9_.]+)\s*(?:,|;)', re.M)
+            regex = '(?:import\s+)([\w\s=,.]+)(?:\s*:[\s\w,=]+)?(?:;)'
+        )
 
     def find_include(self, include, source_dir, path):
         # translate dots (package separators) to slashes
@@ -62,8 +60,10 @@ class D(SCons.Scanner.Classic):
 
     def find_include_names(self, node):
         includes = []
-        for i in self.cre.findall(node.get_text_contents()):
-            includes = includes + self.cre2.findall(i)
+        for iii in self.cre.findall(node.get_text_contents()):
+            for jjj in iii.split(','):
+                kkk = jjj.split('=')[-1]
+                includes.append(kkk.strip())
         return includes
 
 # Local Variables:

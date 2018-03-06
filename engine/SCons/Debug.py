@@ -1,12 +1,15 @@
 """SCons.Debug
 
 Code for debugging SCons internal things.  Shouldn't be
-needed by most users.
+needed by most users. Quick shortcuts:
+
+from SCons.Debug import caller_trace
+caller_trace()
 
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -28,13 +31,18 @@ needed by most users.
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Debug.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Debug.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os
 import sys
 import time
 import weakref
+import inspect
 
+# Global variable that gets set to 'True' by the Main script,
+# when the creation of class instances should get tracked.
+track_instances = False
+# List of currently tracked classes
 tracked_classes = {}
 
 def logInstanceCreation(instance, name=None):
@@ -42,7 +50,12 @@ def logInstanceCreation(instance, name=None):
         name = instance.__class__.__name__
     if name not in tracked_classes:
         tracked_classes[name] = []
-    tracked_classes[name].append(weakref.ref(instance))
+    if hasattr(instance, '__dict__'):
+        tracked_classes[name].append(weakref.ref(instance))
+    else:
+        # weakref doesn't seem to work when the instance
+        # contains only slots...
+        tracked_classes[name].append(instance)
 
 def string_to_classes(s):
     if s == '*':
@@ -62,7 +75,10 @@ def listLoggedInstances(classes, file=sys.stdout):
     for classname in string_to_classes(classes):
         file.write('\n%s:\n' % classname)
         for ref in tracked_classes[classname]:
-            obj = ref()
+            if inspect.isclass(ref):
+                obj = ref()
+            else:
+                obj = ref
             if obj is not None:
                 file.write('    %s\n' % repr(obj))
 
@@ -81,7 +97,8 @@ def dumpLoggedInstances(classes, file=sys.stdout):
 if sys.platform[:5] == "linux":
     # Linux doesn't actually support memory usage stats from getrusage().
     def memory():
-        mstr = open('/proc/self/stat').read()
+        with open('/proc/self/stat') as f:
+            mstr = f.read()
         mstr = mstr.split()[22]
         return int(mstr)
 elif sys.platform[:6] == 'darwin':
@@ -109,22 +126,27 @@ else:
             return res[4]
 
 # returns caller's stack
-def caller_stack(*backlist):
+def caller_stack():
     import traceback
-    if not backlist:
-        backlist = [0]
+    tb = traceback.extract_stack()
+    # strip itself and the caller from the output
+    tb = tb[:-2]
     result = []
-    for back in backlist:
-        tb = traceback.extract_stack(limit=3+back)
-        key = tb[0][:3]
+    for back in tb:
+        # (filename, line number, function name, text)
+        key = back[:3]
         result.append('%s:%d(%s)' % func_shorten(key))
     return result
 
 caller_bases = {}
 caller_dicts = {}
 
-# trace a caller's stack
 def caller_trace(back=0):
+    """
+    Trace caller stack and save info into global dicts, which
+    are printed automatically at the end of SCons execution.
+    """
+    global caller_bases, caller_dicts
     import traceback
     tb = traceback.extract_stack(limit=3+back)
     tb.reverse()
@@ -212,6 +234,7 @@ def Trace(msg, file=None, mode='w', tstamp=None):
         PreviousTime = now
     fp.write(msg)
     fp.flush()
+    fp.close()
 
 # Local Variables:
 # tab-width:4

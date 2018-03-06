@@ -2,7 +2,7 @@
 
                  SCons - a software construction tool
 
-                         Version 2.2.0
+                         Version 3.0.0
 
 
 This is SCons, a tool for building software (and other files).  SCons is
@@ -28,7 +28,8 @@ the latest version by checking the SCons download page at:
 EXECUTION REQUIREMENTS
 ======================
 
-Running SCons requires Python version 2.4 or later.  There should be
+Running SCons requires Python version 2.7.*.  Currently it does not 
+run on the Python 3.x release.  There should be
 no other dependencies or requirements to run SCons.  (There is, however,
 an additional requirement to *install* SCons from this particular
 package; see the next section.)
@@ -56,7 +57,7 @@ provided Python-standard setup script as follows:
 
 By default, the above command will do the following:
 
-    --  Install the version-numbered "scons-2.2.0" and "sconsign-2.2.0"
+    --  Install the version-numbered "scons-3.0.0" and "sconsign-3.0.0"
         scripts in the default system script directory (/usr/bin or
         C:\Python*\Scripts, for example).  This can be disabled by
         specifying the "--no-version-script" option on the command
@@ -70,17 +71,17 @@ By default, the above command will do the following:
         making it the default on your system.
 
         On UNIX or Linux systems, you can have the "scons" and "sconsign"
-        scripts be hard links or symbolic links to the "scons-2.2.0" and
-        "sconsign-2.2.0" scripts by specifying the "--hardlink-scons"
+        scripts be hard links or symbolic links to the "scons-3.0.0" and
+        "sconsign-3.0.0" scripts by specifying the "--hardlink-scons"
         or "--symlink-scons" options on the command line.
 
-    --  Install "scons-2.2.0.bat" and "scons.bat" wrapper scripts in the
+    --  Install "scons-3.0.0.bat" and "scons.bat" wrapper scripts in the
         Python prefix directory on Windows (C:\Python*, for example).
         This can be disabled by specifying the "--no-install-bat" option
         on the command line.
 
         On UNIX or Linux systems, the "--install-bat" option may be
-        specified to have "scons-2.2.0.bat" and "scons.bat" files
+        specified to have "scons-3.0.0.bat" and "scons.bat" files
         installed in the default system script directory, which is useful
         if you want to install SCons in a shared file system directory
         that can be used to execute SCons from both UNIX/Linux and
@@ -88,7 +89,7 @@ By default, the above command will do the following:
 
     --  Install the SCons build engine (a Python module) in an
         appropriate version-numbered SCons library directory
-        (/usr/lib/scons-2.2.0 or C:\Python*\scons-2.2.0, for example).
+        (/usr/lib/scons-3.0.0 or C:\Python*\scons-3.0.0, for example).
         See below for more options related to installing the build
         engine library.
 
@@ -174,7 +175,7 @@ Submission page:
 
 You can also send mail to the SCons developers' mailing list:
 
-        dev@scons.tigris.org
+        scons-dev@scons.org
 
 But even if you send email to the mailing list please make sure that you
 ALSO submit a bug report to the project page bug tracker, because bug
@@ -187,11 +188,11 @@ MAILING LISTS
 An active mailing list for users of SCons is available.  You may send
 questions or comments to the list at:
 
-        users@scons.tigris.org
+        scons-users@scons.org
 
 You may subscribe to the mailing list by sending email to:
 
-        users-subscribe@scons.tigris.org
+        scons-users-join@scons.org
 
 There is also a low-volume mailing list available for announcements
 about SCons.  Subscribe by sending email to:
@@ -224,20 +225,26 @@ Check the SCons web site at:
 
 AUTHOR INFO
 ===========
+SCons was originally written by Steven Knight, knight at baldmt dot com.
+Since around 2010 it has been maintained by the SCons
+development team, co-managed by Bill Deegan and Gary Oberbrunner, with
+many contributors, including but not at all limited to:
 
-Steven Knight
-knight at baldmt dot com
-http://www.baldmt.com/~knight/
+- Chad Austin
+- Dirk Baechle
+- Charles Crain
+- William Deegan
+- Steve Leblanc
+- Rob Managan
+- Greg Noel
+- Gary Oberbrunner
+- Anthony Roach
+- Greg Spencer
+- Tom Tanner
+- Anatoly Techtonik
+- Christoph Wiedemann
+- Russel Winder
 
-With plenty of help from the SCons Development team:
-        Chad Austin
-        Charles Crain
-        Steve Leblanc
-        Greg Noel
-        Gary Oberbrunner
-        Anthony Roach
-        Greg Spencer
-        Christoph Wiedemann
+\... and many others.
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
-src/README.txt issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo
+Copyright (c) 2001 - 2015 The SCons Foundation

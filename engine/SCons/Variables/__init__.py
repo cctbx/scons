@@ -5,7 +5,7 @@ customizable variables to an SCons build.
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -26,7 +26,7 @@ customizable variables to an SCons build.
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__revision__ = "src/engine/SCons/Variables/__init__.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Variables/__init__.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os.path
 import sys
@@ -36,11 +36,11 @@ import SCons.Errors
 import SCons.Util
 import SCons.Warnings
 
-from BoolVariable import BoolVariable  # okay
-from EnumVariable import EnumVariable  # okay
-from ListVariable import ListVariable  # naja
-from PackageVariable import PackageVariable # naja
-from PathVariable import PathVariable # okay
+from .BoolVariable import BoolVariable  # okay
+from .EnumVariable import EnumVariable  # okay
+from .ListVariable import ListVariable  # naja
+from .PackageVariable import PackageVariable # naja
+from .PathVariable import PathVariable # okay
 
 
 class Variables(object):
@@ -50,12 +50,17 @@ class Variables(object):
     Holds all the options, updates the environment with the variables,
     and renders the help text.
     """
-    def __init__(self, files=[], args={}, is_global=1):
+    def __init__(self, files=None, args=None, is_global=1):
         """
         files - [optional] List of option configuration files to load
             (backward compatibility) If a single string is passed it is
                                      automatically placed in a file list
         """
+        # initialize arguments
+        if files is None:
+            files = []
+        if args is None:
+            args = {}
         self.options = []
         self.args = args
         if not SCons.Util.is_List(files):
@@ -110,13 +115,13 @@ class Variables(object):
         """
         Add an option.
 
-        key - the name of the variable, or a list or tuple of arguments
-        help - optional help text for the options
-        default - optional default value
-        validator - optional function that is called to validate the option's value
-                    Called with (key, value, environment)
-        converter - optional function that is called to convert the option's value before
-                    putting it in the environment.
+
+        @param key: the name of the variable, or a list or tuple of arguments
+        @param help: optional help text for the options
+        @param default: optional default value
+        @param validator: optional function that is called to validate the option's value
+        @type validator: Called with (key, value, environment)
+        @param converter: optional function that is called to convert the option's value before putting it in the environment.
         """
 
         if SCons.Util.is_List(key) or isinstance(key, tuple):
@@ -136,14 +141,17 @@ class Variables(object):
         Each list element is a tuple/list of arguments to be passed on
         to the underlying method for adding options.
 
-        Example:
-          opt.AddVariables(
+        Example::
+
+            opt.AddVariables(
             ('debug', '', 0),
             ('CC', 'The C compiler'),
             ('VALIDATE', 'An option for testing validation', 'notset',
              validator, None),
             )
+
         """
+
         for o in optlist:
             self._do_add(*o)
 
@@ -170,7 +178,9 @@ class Variables(object):
                     sys.path.insert(0, dir)
                 try:
                     values['__name__'] = filename
-                    exec open(filename, 'rU').read() in {}, values
+                    with open(filename, 'r') as f:
+                        contents = f.read()
+                    exec(contents, {}, values)
                 finally:
                     if dir:
                         del sys.path[0]
@@ -206,7 +216,7 @@ class Variables(object):
                         env[option.key] = option.converter(value)
                     except TypeError:
                         env[option.key] = option.converter(value, env)
-                except ValueError, x:
+                except ValueError as x:
                     raise SCons.Errors.UserError('Error converting option: %s\n%s'%(option.key, x))
 
 
@@ -268,7 +278,7 @@ class Variables(object):
             finally:
                 fh.close()
 
-        except IOError, x:
+        except IOError as x:
             raise SCons.Errors.UserError('Error writing options to file: %s\n%s' % (filename, x))
 
     def GenerateHelpText(self, env, sort=None):

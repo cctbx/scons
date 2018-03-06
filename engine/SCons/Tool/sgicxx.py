@@ -1,5 +1,15 @@
+"""SCons.Tool.sgic++
+
+Tool-specific initialization for MIPSpro C++ on SGI.
+
+There normally shouldn't be any need to import this module directly.
+It will usually be imported through the generic SCons.Tool.Tool()
+selection method.
+
+"""
+
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,40 +31,28 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Sig.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
-
-__doc__ = """Place-holder for the old SCons.Sig module hierarchy
-
-This is no longer used, but code out there (such as the NSIS module on
-the SCons wiki) may try to import SCons.Sig.  If so, we generate a warning
-that points them to the line that caused the import, and don't die.
-
-If someone actually tried to use the sub-modules or functions within
-the package (for example, SCons.Sig.MD5.signature()), then they'll still
-get an AttributeError, but at least they'll know where to start looking.
-"""
+__revision__ = "src/engine/SCons/Tool/sgicxx.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import SCons.Util
-import SCons.Warnings
 
-msg = 'The SCons.Sig module no longer exists.\n' \
-      '    Remove the following "import SCons.Sig" line to eliminate this warning:'
+import SCons.Tool.cxx
+cplusplus = SCons.Tool.cxx
+#cplusplus = __import__('cxx', globals(), locals(), [])
 
-SCons.Warnings.warn(SCons.Warnings.DeprecatedSigModuleWarning, msg)
 
-default_calc = None
-default_module = None
+def generate(env):
+    """Add Builders and construction variables for SGI MIPS C++ to an Environment."""
 
-class MD5Null(SCons.Util.Null):
-    def __repr__(self):
-        return "MD5Null()"
+    cplusplus.generate(env)
 
-class TimeStampNull(SCons.Util.Null):
-    def __repr__(self):
-        return "TimeStampNull()"
-
-MD5 = MD5Null()
-TimeStamp = TimeStampNull()
+    env['CXX']         = 'CC'
+    env['CXXFLAGS']    = SCons.Util.CLVar('-LANG:std')
+    env['SHCXX']       = '$CXX'
+    env['SHOBJSUFFIX'] = '.o'
+    env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
+    
+def exists(env):
+    return env.Detect('CC')
 
 # Local Variables:
 # tab-width:4

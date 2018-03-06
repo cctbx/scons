@@ -1,6 +1,6 @@
-"""SCons.Tool.RCS.py
+"""engine.SCons.Tool.f08
 
-Tool-specific initialization for RCS.
+Tool-specific initialization for the generic Posix f08 Fortran compiler.
 
 There normally shouldn't be any need to import this module directly.
 It will usually be imported through the generic SCons.Tool.Tool()
@@ -8,7 +8,10 @@ selection method.
 
 """
 
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+from __future__ import absolute_import
+
+#
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -28,34 +31,32 @@ selection method.
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 
-__revision__ = "src/engine/SCons/Tool/RCS.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/f08.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
-import SCons.Action
-import SCons.Builder
+import SCons.Defaults
+import SCons.Tool
 import SCons.Util
+from . import fortran
+from SCons.Tool.FortranCommon import add_all_to_env, add_f08_to_env
+
+compilers = ['f08']
 
 def generate(env):
-    """Add a Builder factory function and construction variables for
-    RCS to an Environment."""
+    add_all_to_env(env)
+    add_f08_to_env(env)
 
-    def RCSFactory(env=env):
-        """ """
-        import SCons.Warnings as W
-        W.warn(W.DeprecatedSourceCodeWarning, """The RCS() factory is deprecated and there is no replacement.""")
-        act = SCons.Action.Action('$RCS_COCOM', '$RCS_COCOMSTR')
-        return SCons.Builder.Builder(action = act, env = env)
+    fcomp = env.Detect(compilers) or 'f08'
+    env['F08']  = fcomp
+    env['SHF08']  = fcomp
 
-    #setattr(env, 'RCS', RCSFactory)
-    env.RCS = RCSFactory
+    env['FORTRAN']  = fcomp
+    env['SHFORTRAN']  = fcomp
 
-    env['RCS']          = 'rcs'
-    env['RCS_CO']       = 'co'
-    env['RCS_COFLAGS']  = SCons.Util.CLVar('')
-    env['RCS_COCOM']    = '$RCS_CO $RCS_COFLAGS $TARGET'
 
 def exists(env):
-    return env.Detect('rcs')
+    return env.Detect(compilers)
 
 # Local Variables:
 # tab-width:4

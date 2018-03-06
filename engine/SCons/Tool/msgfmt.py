@@ -1,6 +1,6 @@
 """ msgfmt tool """
 
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 # 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__revision__ = "src/engine/SCons/Tool/msgfmt.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/msgfmt.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 from SCons.Builder import BuilderBase
 #############################################################################
@@ -41,7 +41,7 @@ class _MOFileBuilder(BuilderBase):
     import SCons.Util
     from SCons.Tool.GettextCommon import _read_linguas_from_files
     linguas_files = None
-    if env.has_key('LINGUAS_FILE') and env['LINGUAS_FILE'] is not None:
+    if 'LINGUAS_FILE' in env and env['LINGUAS_FILE'] is not None:
       linguas_files = env['LINGUAS_FILE']
       # This should prevent from endless recursion. 
       env['LINGUAS_FILE'] = None
@@ -77,7 +77,10 @@ def generate(env,**kw):
   """ Generate `msgfmt` tool """
   import SCons.Util
   from SCons.Tool.GettextCommon import _detect_msgfmt
-  env['MSGFMT'] = _detect_msgfmt(env)
+  try:
+    env['MSGFMT'] = _detect_msgfmt(env)
+  except:
+    env['MSGFMT'] = 'msgfmt'
   env.SetDefault(
     MSGFMTFLAGS = [ SCons.Util.CLVar('-c') ],
     MSGFMTCOM = '$MSGFMT $MSGFMTFLAGS -o $TARGET $SOURCE',
@@ -92,7 +95,10 @@ def generate(env,**kw):
 def exists(env):
   """ Check if the tool exists """
   from SCons.Tool.GettextCommon import _msgfmt_exists
-  return _msgfmt_exists(env)
+  try:
+    return _msgfmt_exists(env)
+  except:
+    return False
 #############################################################################
 
 # Local Variables:

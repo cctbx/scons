@@ -1,5 +1,15 @@
+from __future__ import print_function
+
+"""SCons.Tool.DCommon
+
+Common code for the various D tools.
+
+Coded by Russel Winder (russel@winder.org.uk)
+2012-09-06
+"""
+
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,22 +31,36 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__doc__ = """
-io compatibility module for older (pre-2.6) Python versions
+__revision__ = "src/engine/SCons/Tool/DCommon.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
-This does not not NOT (repeat, *NOT*) provide complete io
-functionality.  It only wraps the portions of io functionality used
-by SCons, in an interface that looks enough like io for our purposes.
-"""
+import os.path
 
-__revision__ = "src/engine/SCons/compat/_scons_io.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
 
-# Use the "imp" module to protect the imports below from fixers.
-import imp
+def isD(env, source):
+    if not source:
+        return 0
+    for s in source:
+        if s.sources:
+            ext = os.path.splitext(str(s.sources[0]))[1]
+            if ext == '.d':
+                return 1
+    return 0
 
-_cStringIO = imp.load_module('cStringIO', *imp.find_module('cStringIO'))
-StringIO = _cStringIO.StringIO
-del _cStringIO
+
+def addDPATHToEnv(env, executable):
+    dPath = env.WhereIs(executable)
+    if dPath:
+        phobosDir = dPath[:dPath.rindex(executable)] + '/../src/phobos'
+        if os.path.isdir(phobosDir):
+            env.Append(DPATH=[phobosDir])
+
+
+def allAtOnceEmitter(target, source, env):
+    if env['DC'] in ('ldc2', 'dmd'):
+        env.SideEffect(str(target[0]) + '.o', target[0])
+        env.Clean(target[0], str(target[0]) + '.o')
+    return target, source
+
 
 # Local Variables:
 # tab-width:4

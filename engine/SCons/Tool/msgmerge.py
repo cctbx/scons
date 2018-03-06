@@ -3,7 +3,7 @@
 Tool specific initialization for `msgmerge` tool.
 """
 
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 # 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -24,7 +24,7 @@ Tool specific initialization for `msgmerge` tool.
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__revision__ = "src/engine/SCons/Tool/msgmerge.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/msgmerge.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 #############################################################################
 def _update_or_init_po_files(target, source, env):
@@ -58,7 +58,7 @@ def _POUpdateBuilderWrapper(env, target=None, source=_null, **kw):
   if source is _null:
     if 'POTDOMAIN' in kw:
       domain = kw['POTDOMAIN']
-    elif env.has_key('POTDOMAIN') and env['POTDOMAIN']:
+    elif 'POTDOMAIN' in env and env['POTDOMAIN']:
       domain = env['POTDOMAIN']
     else:
       domain = 'messages'
@@ -70,7 +70,10 @@ def _POUpdateBuilderWrapper(env, target=None, source=_null, **kw):
 def generate(env,**kw):
   """ Generate the `xgettext` tool """
   from SCons.Tool.GettextCommon import _detect_msgmerge
-  env['MSGMERGE'] = _detect_msgmerge(env)
+  try:
+    env['MSGMERGE'] = _detect_msgmerge(env)
+  except:
+    env['MSGMERGE'] = 'msgmerge'
   env.SetDefault(
     POTSUFFIX = ['.pot'],
     POSUFFIX = ['.po'],
@@ -88,7 +91,10 @@ def generate(env,**kw):
 def exists(env):
   """ Check if the tool exists """
   from SCons.Tool.GettextCommon import _msgmerge_exists
-  return  _msgmerge_exists(env)
+  try:
+    return  _msgmerge_exists(env)
+  except:
+    return False
 #############################################################################
 
 # Local Variables:

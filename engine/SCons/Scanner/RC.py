@@ -1,12 +1,12 @@
 """SCons.Scanner.RC
 
-This module implements the depenency scanner for RC (Interface
+This module implements the dependency scanner for RC (Interface
 Definition Language) files.
 
 """
 
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -28,23 +28,34 @@ Definition Language) files.
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/engine/SCons/Scanner/RC.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Scanner/RC.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
+
+import re
 
 import SCons.Node.FS
 import SCons.Scanner
-import re
+
+
+def no_tlb(nodes):
+    """
+    Filter out .tlb files as they are binary and shouldn't be scanned
+    """
+    # print("Nodes:%s"%[str(n) for n in nodes])
+    return [n for n in nodes if str(n)[-4:] != '.tlb']
+
 
 def RCScan():
     """Return a prototype Scanner instance for scanning RC source files"""
- 
+
     res_re= r'^(?:\s*#\s*(?:include)|' \
             '.*?\s+(?:ICON|BITMAP|CURSOR|HTML|FONT|MESSAGETABLE|TYPELIB|REGISTRY|D3DFX)' \
             '\s*.*?)' \
             '\s*(<|"| )([^>"\s]+)(?:[>"\s])*$'
-    resScanner = SCons.Scanner.ClassicCPP( "ResourceScanner",
-                                           "$RCSUFFIXES",
-                                           "CPPPATH",
-                                           res_re )
+    resScanner = SCons.Scanner.ClassicCPP("ResourceScanner",
+                                          "$RCSUFFIXES",
+                                          "CPPPATH",
+                                          res_re,
+                                          recursive=no_tlb)
     
     return resScanner
 

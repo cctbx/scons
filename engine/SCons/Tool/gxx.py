@@ -1,6 +1,6 @@
-"""SCons.Tool.Subversion.py
+"""SCons.Tool.g++
 
-Tool-specific initialization for Subversion.
+Tool-specific initialization for g++.
 
 There normally shouldn't be any need to import this module directly.
 It will usually be imported through the generic SCons.Tool.Tool()
@@ -8,7 +8,8 @@ selection method.
 
 """
 
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 The SCons Foundation
+#
+# Copyright (c) 2001 - 2017 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -28,41 +29,48 @@ selection method.
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 
-__revision__ = "src/engine/SCons/Tool/Subversion.py issue-2856:2676:d23b7a2f45e8 2012/08/05 15:38:28 garyo"
+__revision__ = "src/engine/SCons/Tool/gxx.py rel_3.0.0:4395:8972f6a2f699 2017/09/18 12:59:24 bdbaddog"
 
 import os.path
+import re
+import subprocess
 
-import SCons.Action
-import SCons.Builder
+import SCons.Tool
 import SCons.Util
 
+from . import gcc
+from . import cxx
+
+compilers = ['g++']
+
 def generate(env):
-    """Add a Builder factory function and construction variables for
-    Subversion to an Environment."""
+    """Add Builders and construction variables for g++ to an Environment."""
+    static_obj, shared_obj = SCons.Tool.createObjBuilders(env)
 
-    def SubversionFactory(repos, module='', env=env):
-        """ """
-        # fail if repos is not an absolute path name?
-        import SCons.Warnings as W
-        W.warn(W.DeprecatedSourceCodeWarning, """The Subversion() factory is deprecated and there is no replacement.""")
-        if module != '':
-            module = os.path.join(module, '')
-        act = SCons.Action.Action('$SVNCOM', '$SVNCOMSTR')
-        return SCons.Builder.Builder(action = act,
-                                     env = env,
-                                     SVNREPOSITORY = repos,
-                                     SVNMODULE = module)
+    if 'CXX' not in env:
+        env['CXX']    = env.Detect(compilers) or compilers[0]
 
-    #setattr(env, 'Subversion', SubversionFactory)
-    env.Subversion = SubversionFactory
+    cxx.generate(env)
 
-    env['SVN']      = 'svn'
-    env['SVNFLAGS'] = SCons.Util.CLVar('')
-    env['SVNCOM']   = '$SVN $SVNFLAGS cat $SVNREPOSITORY/$SVNMODULE$TARGET > $TARGET'
+    # platform specific settings
+    if env['PLATFORM'] == 'aix':
+        env['SHCXXFLAGS'] = SCons.Util.CLVar('$CXXFLAGS -mminimal-toc')
+        env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
+        env['SHOBJSUFFIX'] = '$OBJSUFFIX'
+    elif env['PLATFORM'] == 'hpux':
+        env['SHOBJSUFFIX'] = '.pic.o'
+    elif env['PLATFORM'] == 'sunos':
+        env['SHOBJSUFFIX'] = '.pic.o'
+    # determine compiler version
+    version = gcc.detect_version(env, env['CXX'])
+    if version:
+        env['CXXVERSION'] = version
 
 def exists(env):
-    return env.Detect('svn')
+    # is executable, and is a GNU compiler (or accepts '--version' at least)
+    return gcc.detect_version(env, env.Detect(env.get('CXX', compilers)))
 
 # Local Variables:
 # tab-width:4
